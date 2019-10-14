@@ -1,0 +1,207 @@
+<?php
+
+$wgFile = $_GET["wgroup"];
+
+$agent_data = "/var/opt/shoretel_data/agentData_new/$wgFile";
+
+$dnisJSON = file_get_contents($agent_data);
+
+$obj = json_decode($dnisJSON);
+
+#print $dnisJSON;
+
+$groupName = $obj->{'group-name'};
+
+#print "<div class=\"boxtitle top-box_grn_title \">$groupName</div>";
+
+$timeNow = date('Y-m-d H:i:s', time());
+$timeNowTimestapmp = strtotime($timeNow);
+
+
+#########arrays of success
+
+$array_state = array(
+
+'0'=>"Logged Out",
+'1'=>"Idle",
+'2'=>"ACD alerting",
+'3'=>"On Call",
+'4'=>"Wrap up",
+'5'=>"Non-ACD Incoming",
+'6'=>"Non-ACD Outgoing",
+'7'=>"Release",
+'8'=>"Non-ACD outgoing while in release",
+'9'=>"Non-ACD incoming while in release",
+'10'=>"Busy while in release",
+'11'=>"Busy",
+'21'=>"Split",
+'24'=>"Outbound ACD Reserved",
+'25'=>"Outbound ACD Alerting",
+'26'=>"Outbound ACD Talking",
+'27'=>"Handling email",
+'28'=>"Handling email while on outgoing voice call",
+'29'=>"Handling email while on incoming voice call",
+'30'=>"Handling email while in busy state with voiceactivities"
+
+	);
+
+
+$array_irn = array(
+
+'6151'=>"Croydon Admin",
+'6152'=>"Croydon Care Plan",
+'6153'=>"Croydon Standard",
+'6154'=>"Croydon Repeat Caller",
+'6155'=>"Croydon Dental",
+'6193'=>"Croydon Medication",
+'6156'=>"Kingston Admin",
+'6157'=>"Kingston Care Plan",
+'6158'=>"Kingston Standard",
+'6159'=>"Kingston Repeat Caller",
+'6160'=>"Kingston Dental",
+'6194'=>"Kingston Medication",
+'6161'=>"Merton Admin",
+'6162'=>"Merton Care Plan",
+'6163'=>"Merton Standard",
+'6164'=>"Merton Repeat Caller",
+'6165'=>"Merton Dental",
+'6195'=>"Merton Medication",
+'6166'=>"Wandsworth Admin",
+'6167'=>"Wandsworth Care Plan",
+'6168'=>"Wandsworth Standard",
+'6169'=>"Wandsworth Repeat Caller",
+'6170'=>"Wandsworth Dental",
+'6196'=>"Wandsworth Medication",
+'6171'=>"Richmond Admin",
+'6172'=>"Richmond Care Plan",
+'6173'=>"Richmond Standard",
+'6174'=>"Richmond Repeat Caller",
+'6175'=>"Richmond Dental",
+'6197'=>"Richmond Medication",
+'6176'=>"Sutton Admin",
+'6177'=>"Sutton Care Plan",
+'6178'=>"Sutton Standard",
+'6179'=>"Sutton Repeat Caller",
+'6180'=>"Sutton Dental",
+'6198'=>"Sutton Medication",
+'6181'=>"National Unknown",
+'6182'=>"National Call",
+'6191'=>"SWL Redwood",
+'6192'=>"Wandsworth SPOC",
+'6186'=>"SWL HCP",
+'6200'=>"111 SWL ClinLead",
+'6201'=>"111 SWL ClinAdvL",
+'6202'=>"111 SWL ALD",
+'6183'=>"111 Clin WT",
+'6184'=>"SWL CHUB Clin",
+'6185'=>"SWL CHUB Phar",
+'6187'=>"Dev Dental",
+'6188'=>"Dev HCP",
+'6189'=>"Dev Repeat",
+'6190'=>"Dev 111",
+'6199'=>"DEV WT"
+	);
+
+
+##########end of arrays
+
+
+
+?>
+
+<table class="table">
+
+<?php
+
+print "<tr class='titlerow'>";
+print "<td align='left'>Agent Name</td>";
+print "<td>Agent ID</td>";
+print "<td>Ext</td>";
+print "<td align='left'>State</td>";
+print "<td>Time</td>";
+print "<td align='left'>Release</td>";
+print "<td align='left'>Line</td>";
+print "<td>Wrap Code</td>";
+print "<td>Location</td>";
+print "</tr>";
+
+foreach($obj->{'agents'} as $thisAgent)
+{
+
+
+	#print_r($thisAgent);
+	#print "\n\n<br>";
+	#print $thisAgent->{'agent-name'};
+	#print "<br>\n\n";
+
+	$stateStart = $thisAgent->{'state-start-time'};
+
+	$statestartTimestamp = strtotime($stateStart);
+	$timeinstate = $timeNowTimestapmp - $statestartTimestamp;
+
+	$timeclass = "";
+	if ($timeinstate >900)
+	{
+		$timeclass = "class=\"warning\"";
+	}
+
+	$timeinstate = gmdate("H:i:s", $timeinstate);
+
+	$astate = $array_state[$thisAgent->{'agent-state'}];
+	$dnis =  $array_irn[$thisAgent->{'dnis'}];
+
+	$stateclass="";
+	if (($astate=="On Call")||($astate=="Non-ACD Outgoing"))
+	{
+
+		$stateclass = "class=\"active\"";
+	}
+
+	if ($astate=="Release")
+	{
+
+		$stateclass = "class=\"warning\"";
+	}
+
+	if ($astate=="Idle")
+	{
+
+		$stateclass = "class=\"info\"";
+	}
+
+	if ($astate=="Split")
+	{
+
+		$stateclass = "class=\"other\"";
+	}
+
+$location = substr($thisAgent->{'agent-number'}, 0, 2);
+
+$locationPlace="";
+if ($location == "80"){$locationPlace = "Hannover House";}
+if ($location == "10"){$locationPlace = "Vocare House";}
+
+
+print "<tr>";
+print "<td align='left'>".$thisAgent->{'agent-name'}."</td>";
+print "<td>".$thisAgent->{'agent-number'}."</td>";
+print "<td>".$thisAgent->{'agent-ext'}."</td>";
+#print "<td>".$thisAgent->{'agent-state'}."</td>";
+print "<td $stateclass>".$astate."</td>";
+print "<td $timeclass>".$timeinstate."</td>";
+print "<td align='left'>".$thisAgent->{'release-code'}."</td>";
+#print "<td>".$thisAgent->{'dnis'}."</td>";
+print "<td align='left'>".$dnis."</td>";
+print "<td>".$thisAgent->{'wrapup-code'}."</td>";
+print "<td>$locationPlace ($location)</td>";
+print "</tr>";
+
+
+}
+
+
+
+?>
+	
+</table>
+
